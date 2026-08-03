@@ -29,7 +29,7 @@ func generateToken(userID int) (string, error) {
 }
 
 
-type Movie struct{
+type Movies struct{
   db *sql.DB
 }
 
