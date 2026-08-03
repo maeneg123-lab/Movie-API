@@ -138,7 +138,7 @@ func (m *Movies) register(w http.ResponseWriter, r *http.Request) {
     }
 
     // Сохраняем в БД
-    _, err = m.db.Exec("INSERT INTO users (username, password) VALUES ($1, $2)", username, hashedPassword)
+    _, err = m.db.Exec("INSERT INTO users1 (username, password) VALUES ($1, $2)", username, hashedPassword)
     if err != nil {
         http.Error(w, "Username already exists", http.StatusConflict)
         return
@@ -159,7 +159,7 @@ func (m *Movies) login(w http.ResponseWriter, r *http.Request) {
     // Ищем пользователя в БД
     var userID int
     var hashedPassword string
-    err := m.db.QueryRow("SELECT id, password FROM users WHERE username=$1", username).Scan(&userID, &hashedPassword)
+    err := m.db.QueryRow("SELECT id, password FROM users1 WHERE username=$1", username).Scan(&userID, &hashedPassword)
     if err != nil {
         http.Error(w, "Invalid username or password", http.StatusUnauthorized)
         return
@@ -237,7 +237,7 @@ func main(){
   fmt.Println("Таблица tasks_list проверена/создана")
 
   tableUserCreate:=`
-  CREATE TABLE IF NOT EXISTS users (
+  CREATE TABLE IF NOT EXISTS users1 (
   id SERIAL PRIMARY KEY,
   username TEXT UNIQUE NOT NULL,
   password TEXT NOT NULL,
