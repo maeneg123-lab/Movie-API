@@ -211,49 +211,54 @@ func (m *Movies) get_movie(w http.ResponseWriter, r *http.Request){
 }
 
 func main(){
-  // Проверка переменной окружения
-  dbURL := os.Getenv("DATABASE_URL")
-  fmt.Println("DATABASE_URL =", dbURL)
-  if dbURL == "" {
-      log.Fatal("DATABASE_URL не найдена")
-  }
+    
+    // Проверка переменной окружения
+    dbURL := os.Getenv("DATABASE_URL")
+    fmt.Println("DATABASE_URL =", dbURL)
+    if dbURL == "" {
+        log.Fatal("DATABASE_URL не найдена")
+    }
 
-  server := NewServer()
-  
-  createTableSQL := `
-  CREATE TABLE IF NOT EXISTS movies (
-  id SERIAL PRIMARY KEY,
-  title TEXT NOT NULL,
-  year INT,
-  rating DECIMAL(3,1) CHECK (rating >= 0 AND rating <= 10), -- оценка 0-10
-  user_id INT REFERENCES users(id) ON DELETE CASCADE,
-  created_at TIMESTAMP DEFAULT NOW()
-  );`
+    server := NewServer()
 
-  _, err := server.db.Exec(createTableSQL)
-  if err != nil {
-      log.Fatal("Ошибка создания таблицы:", err)
-  }
-  fmt.Println("Таблица tasks_list проверена/создана")
+    
+    createTableSQL1 := `
+    CREATE TABLE IF NOT EXISTS movies (
+    id SERIAL PRIMARY KEY,
+    title TEXT NOT NULL,
+    year INT,
+    rating DECIMAL(3,1) CHECK (rating >= 0 AND rating <= 10), -- оценка 0-10
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT NOW()
+    );`
 
-  tableUserCreate:=`
-  CREATE TABLE IF NOT EXISTS users1 (
-  id SERIAL PRIMARY KEY,
-  username TEXT UNIQUE NOT NULL,
-  password TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW()
-  );`
+    _, err := server.db.Exec(createTableSQL1)
+    if err != nil {
+        log.Fatal("Ошибка создания таблицы:", err)
+    }
+    fmt.Println("Таблица tasks_list проверена/создана")
 
-  _, err = server.db.Exec(tableUserCreate)
-  if err!= nil{
-      log.Fatal("ошибка создания таблицы user:", err)
-  }
-  fmt.Println("таблица user  создана")
+    createTableSQL := `
+    CREATE TABLE IF NOT EXISTS movies (
+    id SERIAL PRIMARY KEY,
+    title TEXT NOT NULL,
+    year INT,
+    rating DECIMAL(3,1) CHECK (rating >= 0 AND rating <= 10), -- оценка 0-10
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT NOW()
+    );`
 
-  
+    _, err := server.db.Exec(createTableSQL)
+    if err != nil {
+        log.Fatal("Ошибка создания таблицы:", err)
+    }
+    fmt.Println("Таблица tasks_list проверена/создана")
 
-  http.HandleFunc("/register", server.register)
-  http.HandleFunc("/login", server.login)
-  http.HandleFunc("/add_movie", authMiddleware(server.new_movie))
-  http.HandleFunc("/get_movie", authMiddleware(server.get_movie))
+
+    
+
+    http.HandleFunc("/register", server.register)
+    http.HandleFunc("/login", server.login)
+    http.HandleFunc("/add_movie", authMiddleware(server.new_movie))
+    http.HandleFunc("/get_movie", authMiddleware(server.get_movie))
 }
