@@ -248,7 +248,7 @@ func main(){
     created_at TIMESTAMP DEFAULT NOW()
     );`
 
-    _, err := server.db.Exec(createTableSQL)
+    _, err = server.db.Exec(createTableSQL)
     if err != nil {
         log.Fatal("Ошибка создания таблицы:", err)
     }
