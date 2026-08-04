@@ -34,9 +34,8 @@ type Movies struct{
 }
 
 func NewServer() *Movies {
-    // Сначала пробуем взять строку из окружения
-    connStr := os.Getenv("DATABASE_URL")
     // Если её нет — используем локальную для разработки
+     connStr := os.Getenv("DATABASE_URL")
     if connStr == "" {
         connStr = "user=postgres password=36863686 dbname=work_db sslmode=disable"
     }
@@ -199,7 +198,7 @@ func (m *Movies) get_movie(w http.ResponseWriter, r *http.Request){
   fmt.Fprintf(w, "Movies list: \n")
   for rows.Next(){
     var id int
-    var title string 
+    var title string
     var year int
     var rating float64
     var created_at time.Time
@@ -207,58 +206,60 @@ func (m *Movies) get_movie(w http.ResponseWriter, r *http.Request){
     err := rows.Scan(&id, &title,&year,&rating,&created_at)
     if err!=nil{continue}
      fmt.Fprintf(w, "id: %d, title: %v, year: %d, rating: %.2f,  created_at: %v\n", id, title, year,rating, created_at.Format("2006-01-02 15:04:05"))
-  }  
+  }
 }
 
-func main(){
-    
+func main() {
     // Проверка переменной окружения
     dbURL := os.Getenv("DATABASE_URL")
     fmt.Println("DATABASE_URL =", dbURL)
     if dbURL == "" {
-        log.Fatal("DATABASE_URL не найдена")
+        fmt.Println("⚠️ DATABASE_URL не найдена, использую локальную БД")
     }
 
     server := NewServer()
 
-    
-    createTableSQL1 := `
-    CREATE TABLE IF NOT EXISTS movies (
-    id SERIAL PRIMARY KEY,
-    title TEXT NOT NULL,
-    year INT,
-    rating DECIMAL(3,1) CHECK (rating >= 0 AND rating <= 10), -- оценка 0-10
-    user_id INT REFERENCES users(id) ON DELETE CASCADE,
-    created_at TIMESTAMP DEFAULT NOW()
+    // 1. Создаём таблицу пользователей (если её нет)
+    createUsersSQL := `
+    CREATE TABLE IF NOT EXISTS users1 (
+        id SERIAL PRIMARY KEY,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
     );`
-
-    _, err := server.db.Exec(createTableSQL1)
+    _, err := server.db.Exec(createUsersSQL)
     if err != nil {
-        log.Fatal("Ошибка создания таблицы:", err)
+        log.Fatal("Ошибка создания таблицы users:", err)
     }
-    fmt.Println("Таблица tasks_list проверена/создана")
+    fmt.Println("Таблица users создана")
 
-    createTableSQL := `
+    // 2. Создаём таблицу фильмов (если её нет)
+    createMoviesSQL := `
     CREATE TABLE IF NOT EXISTS movies (
-    id SERIAL PRIMARY KEY,
-    title TEXT NOT NULL,
-    year INT,
-    rating DECIMAL(3,1) CHECK (rating >= 0 AND rating <= 10), -- оценка 0-10
-    user_id INT REFERENCES users(id) ON DELETE CASCADE,
-    created_at TIMESTAMP DEFAULT NOW()
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        year INT,
+        rating DECIMAL(3,1) CHECK (rating >= 0 AND rating <= 10),
+        user_id INT REFERENCES users1(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT NOW()
     );`
-
-    _, err = server.db.Exec(createTableSQL)
+    _, err = server.db.Exec(createMoviesSQL)
     if err != nil {
-        log.Fatal("Ошибка создания таблицы:", err)
+        log.Fatal("Ошибка создания таблицы movies:", err)
     }
-    fmt.Println("Таблица tasks_list проверена/создана")
+    fmt.Println("Таблица movies создана")
 
-
-    
-
+    // Регистрируем маршруты
     http.HandleFunc("/register", server.register)
     http.HandleFunc("/login", server.login)
     http.HandleFunc("/add_movie", authMiddleware(server.new_movie))
     http.HandleFunc("/get_movie", authMiddleware(server.get_movie))
+
+    // Запускаем сервер
+    port := os.Getenv("PORT")
+    if port == "" {
+        port = "8080"
+    }
+    fmt.Println("Сервер запущен на порту", port)
+    http.ListenAndServe(":"+port, nil)
 }
